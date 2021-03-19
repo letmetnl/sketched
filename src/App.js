@@ -1,8 +1,8 @@
-import React, { createElement, useLayoutEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import rough from "roughjs/bundled/rough.esm";
 const generator = rough.generator();
 
-const createElement = (x1, y1, x2, y2) => {
+const creatingElement = (x1, y1, x2, y2) => {
   const roughElement = generator.line(x1, y1, x2, y2);
   return { x1, y1, x2, y2, roughElement };
 };
@@ -32,7 +32,7 @@ const App = () => {
     setDrawing(true);
     const { clientX, clientY } = e;
     // now we need to create elements
-    const element = createElement(clientX, clientY, clientX, clientY);
+    const element = creatingElement(clientX, clientY, clientX, clientY);
     setElements((prevState) => [...prevState, element]);
   };
   const handleMouseMove = (event) => {
@@ -40,7 +40,7 @@ const App = () => {
     const { clientX, clientY } = event;
     const index = elements.length - 1;
     const { x1, y1 } = elements[index];
-    const updatedElement = createElement(x1, y1, clientX, clientY);
+    const updatedElement = creatingElement(x1, y1, clientX, clientY);
     const elementsCopy = [...elements];
     elementsCopy[index] = updatedElement;
     setElements(elementsCopy);
