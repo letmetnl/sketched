@@ -91,6 +91,32 @@ const resizedCoordinates = (clientX, clientY, position, coordinates) => {
   }
 };
 
+// in order to maintain redo/undo
+const useHistory = (initialState) => {
+  const [index, setIndex] = useState(0);
+  const [history, setHistory] = useState([initialState]);
+
+  const setState = (action, overwrite = false) => {
+    const newState =
+      typeof action === "function" ? action(history[index]) : action;
+    if (overwrite) {
+      const historyCopy = [...history];
+      historyCopy[index] = newState;
+      setHistory(historyCopy);
+    } else {
+      const updatedState = [...history].slice(0, index + 1);
+      setHistory([...updatedState, newState]);
+      setIndex((prevState) => prevState + 1);
+    }
+  };
+
+  const undo = () => index > 0 && setIndex((prevState) => prevState - 1);
+  const redo = () =>
+    index < history.length - 1 && setIndex((prevState) => prevState + 1);
+
+  return [history[index], setState, undo, redo];
+};
+
 // function for getting element for selection
 const getElementAtPosition = (x, y, elements) => {
   return elements
@@ -102,7 +128,7 @@ const getElementAtPosition = (x, y, elements) => {
 };
 
 const App = () => {
-  const [elements, setElements] = useState([]);
+  const [elements, setElements, undo, redo] = useHistory([]);
   const [action, setAction] = useState("none");
   const [tool, setTool] = useState("line");
   const [selectedElement, setSelectedElement] = useState(null);
@@ -123,6 +149,23 @@ const App = () => {
     // ctx.fillStyle = "green";
     // ctx.fillRect(10, 10, 150, 100);
   }, [elements]);
+
+  useEffect(() => {
+    const undoRedoFunction = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "z") {
+        if (event.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", undoRedoFunction);
+    return () => {
+      document.removeEventListener("keydown", undoRedoFunction);
+    };
+  }, [undo, redo]);
 
   const updateElement = (id, x1, y1, x2, y2, type) => {
     const updatedElement = creatingElement(id, x1, y1, x2, y2, type);
@@ -236,6 +279,10 @@ const App = () => {
           onChange={() => setTool("rectangle")}
         />
         <label htmlFor="rectangle">Rectangle</label>
+      </div>
+      <div style={{ position: "fixed", bottom: 0, padding: 10 }}>
+        <button onClick={undo}>Undo</button>
+        <button onClick={redo}>Redo</button>
       </div>
       <canvas
         id="canvas"
